@@ -103,7 +103,7 @@ class Widrow_Huff(tk.Frame):
                                                highlightcolor="#00FFFF",
                                                label="No. of Delayed Elements",
                                                command=lambda event: self.no_of_delayed_elements_callback())
-        self.no_of_delayed_elements.set(2)#10)
+        self.no_of_delayed_elements.set(10)
         self.no_of_delayed_elements.bind("<ButtonRelease-1>", lambda event: self.no_of_delayed_elements_callback())
         self.no_of_delayed_elements.grid(row=0, column=0, sticky=tk.N + tk.E + tk.S + tk.W)
 
@@ -133,7 +133,7 @@ class Widrow_Huff(tk.Frame):
                                highlightcolor="#00FFFF",
                                label="Stride",
                                command=lambda event: self.stride_value_callback())
-        self.stride_value.set(2)
+        self.stride_value.set(10)
         self.stride_value.bind("<ButtonRelease-1>", lambda event: self.stride_value_callback())
         self.stride_value.grid(row=3, column=0, sticky=tk.N + tk.E + tk.S + tk.W)
 
@@ -182,47 +182,54 @@ class Widrow_Huff(tk.Frame):
         self.total_me_lms = np.zeros((2, int(self.iterations)))
         self.total_me_direct = np.zeros((2, int(self.iterations)))
 
-        for k in range(int(self.iterations)):
+        for k in range(self.iterations):
             self.adjust_weights_lms(k)
-        self.plot()
         print("-----------------------------------------------")
         print("LMS Weights: ", self.weights)
         print("LMS MSE: ", self.total_me_lms[0:1, :])
         print("LMS MAE: ", self.total_me_lms[1:, :])
         print("-----------------------------------------------")
 
-        for k in range(int(self.iterations)):
+        for k in range(self.iterations):
             self.adjust_weights_direct(k)
-        self.plot()
+
+        self.plot(self.total_me_direct[0:1, :], 1, 'mse', 'direct')
+
+        self.plot(self.total_me_direct[1:, :], 2, 'mae', 'direct')
+        self.plot(self.total_me_lms[0:1, :], 1, 'mse', 'lms')
+        self.plot(self.total_me_lms[1:, :], 2, 'mae', 'lms')
+
         print("-----------------------------------------------")
         print("St pt Weights: ", self.weights)
         print("MSE: ", self.total_me_direct[0:1, :])
         print("MAE: ", self.total_me_direct[1:, :])
         print("-----------------------------------------------")
 
-    def plot(self):
-        plt.figure(1)
+    def plot(self, y, figure_number, error, type):
+        plt.figure(figure_number)
         plt.clf()
         x = np.arange(0, self.iterations, 1)
-        y1 = self.total_me_lms[0:1, :]
-        y2 = self.total_me_direct[0:1, :]
-        plt.title("MSE for LMS & Direct")
-        plt.xlabel('Iterations')
-        plt.ylabel('MSE')
-        plt.plot(x, np.transpose(y1), 'green', label="mse using lms")
-        plt.plot(x, np.transpose(y2), 'red', label="mse using direct")
-        plt.legend()
-        plt.gcf().canvas.draw()
+        if type == 'lms':
+            color = 'green'
+            if error == 'mse':
+                label = "mse using lms"
+                title = "MSE"
+            else:
+                label = "mae using lms"
+                title = "MAE"
+        else:
+            color = 'red'
+            if error == 'mse':
+                label = "mse using direct"
+                title = "MSE"
+            else:
+                label = "mae using direct"
+                title = "MAE"
 
-        plt.figure(2)
-        plt.clf()
-        y1 = self.total_me_lms[1:, :]
-        y2 = self.total_me_direct[1:, :]
-        plt.title("MAE for LMS & Direct")
+        plt.title(title + " for LMS & Direct")
         plt.xlabel('Iterations')
-        plt.ylabel('MAE')
-        plt.plot(x, np.transpose(y1), 'green', label="mae using lms")
-        plt.plot(x, np.transpose(y2), 'red', label="mae using direct")
+        plt.ylabel(title)
+        plt.plot(x, np.transpose(y), color, label=label)
         plt.legend()
         plt.gcf().canvas.draw()
 
@@ -244,8 +251,6 @@ class Widrow_Huff(tk.Frame):
     def set_weights_to_zero_callback(self):
         self.weights = np.zeros((1, 2 * (self.delayed_elements + 1) + 1))
         self.weights[0][self.r - 1] = self.weights[0][self.r] = 1
-        self.total_me_direct = np.zeros((2, self.iterations))
-        self.total_me_lms = np.zeros((2, self.iterations))
         print("Weights and Bias set to zero!")
         print("Initial weights : ", self.weights)
 
@@ -287,10 +292,10 @@ class Widrow_Huff(tk.Frame):
         self.update_values()
         self.set_weights_to_zero_callback()
         self.data_split()
-        self.total_me_lms = np.zeros((2, self.iterations))
         for k in range(self.iterations):
             self.adjust_weights_lms(k)
-        self.plot()
+        self.plot(self.total_me_lms[0:1, :], 1, 'mse', 'lms')
+        self.plot(self.total_me_lms[1:, :], 2, 'mae', 'lms')
         print("-----------------------------------------------")
         print("LMS Weights: ", self.weights)
         print("LMS MSE: ", self.total_me_lms[0:1, :])
@@ -306,10 +311,10 @@ class Widrow_Huff(tk.Frame):
         self.update_values()
         self.set_weights_to_zero_callback()
         self.data_split()
-        self.total_me_direct = np.zeros((2, self.iterations))
         for k in range(int(self.iterations)):
             self.adjust_weights_direct(k)
-        self.plot()
+        self.plot(self.total_me_direct[0:1, :], 1, 'mse', 'direct')
+        self.plot(self.total_me_direct[1:, :], 2, 'mae', 'direct')
         print("-----------------------------------------------")
         print("St pt Weights: ", self.weights)
         print("MSE: ", self.total_me_direct[0:1, :])
